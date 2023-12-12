@@ -1,35 +1,19 @@
 use std::fs;
-use std::cmp;
 // use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 
 fn get_first_rule_rank(s: &str) -> u64 {
-    let mut hand = s.trim().replace("J", "")
+    let mut cards: Vec<u64> = s.trim()
         .chars()
         .fold(HashMap::new(), |mut acc: HashMap<char, u64>, c| {
             *acc.entry(c).or_insert(0) += 1;
             acc
-        });
-
-    if hand.is_empty() {
-        return 5 * 10000000000;
-    } 
-
-    let best_card = hand.iter().max_by_key(|entry | entry.1).unwrap().0;
-    hand = s.trim().replace("J", &best_card.to_string()[..])
-        .chars()
-        .fold(HashMap::new(), |mut acc: HashMap<char, u64>, c| {
-            *acc.entry(c).or_insert(0) += 1;
-            acc
-        });
-    let mut cards: Vec<u64> = hand.values().cloned().collect();
+        })
+        .values().cloned().collect();
 
     cards.sort_by(|a, b| b.cmp(a));
 
-    let num_jokers= u64::try_from(s.chars().filter(|c| *c == 'J').count()).unwrap();
-
     let mut rank: u64 = cards[0];
-    rank = cmp::min(rank + num_jokers, 5);
     rank = match rank {
         3 => if cards[1] == 2 {
             rank*2
@@ -42,7 +26,7 @@ fn get_first_rule_rank(s: &str) -> u64 {
             (rank * 2) - 1
         },
         1 => 0,
-        _ => 0,
+        _ => rank * 2,
     };
     return rank * 10000000000;
 }
@@ -58,7 +42,7 @@ fn get_second_rule_rank(s: &str) -> u64 {
         .replace("8", "08")
         .replace("9", "09")
         .replace("T", "10")
-        .replace("J", "01")
+        .replace("J", "11")
         .replace("Q", "12")
         .replace("K", "13")
         .replace("A", "14")
@@ -84,7 +68,6 @@ fn main() {
 
 
     rank_bid_v.sort_by(|(a, _), (b, _)| a.cmp(b));
-    println!("The rv is: {:?}", rank_bid_v);
     let number: u64 = rank_bid_v.iter().enumerate().map(|(i, (_, bid))| ((i as u64)+1)*bid).sum();
     println!("The result is: {number}");
 }
