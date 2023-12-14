@@ -21,17 +21,21 @@ fn parse_map_node(s: &str) -> Option<(String, (String, String))> {
     }
 }
 
-fn check_nodez(nodes: &Vec<String>) -> bool {
-    nodes.iter().map(|n| n.ends_with("Z")).all(|x| x)
-}
-
-fn make_step(dir: char, map: &HashMap<String, (String, String)>, curr_nodes: Vec<String>) -> Vec<String> {
+fn get_steps(path: &str, path_left: &str, map: &HashMap<String, (String, String)>, curr_node: &str, curr_steps: u32) -> u32 {
     
-    let new_nodes: Vec<String> = match dir {
-        'L' => curr_nodes.iter().map(|n| map[n].0.clone()).collect(),
-        _ => curr_nodes.iter().map(|n| map[n].1.clone()).collect(),
-    };
-    new_nodes
+    match curr_node.eq("ZZZ") {
+        true => curr_steps,
+        false => {
+            let new_path_left = match path_left.len() {
+                1 => path,
+                _ => &path_left[1..],
+            };
+            match path_left.starts_with("L") {
+                true => get_steps(path, new_path_left, map, &map[curr_node].0[..], curr_steps+1),
+                false => get_steps(path, new_path_left, map, &map[curr_node].1[..], curr_steps+1),
+            }
+        },
+    }
     
 }
 
@@ -39,12 +43,6 @@ fn main() {
     let contents = fs::read_to_string("input_files/day_8/part1.txt").expect("No such file found!");
     let path: String = contents.lines().next().unwrap().trim().to_owned();
     let map: HashMap<String, (String, String)> = contents.lines().filter_map(parse_map_node).collect();
-    let mut nodes: Vec<String> = map.keys().filter(|n| n.ends_with("A")).cloned().collect();
-    let mut path_iter = path.chars().cycle();
-    let mut number: u32 = 0;
-    while !check_nodez(&nodes) {
-        number += 1;
-        nodes = make_step(path_iter.next().unwrap(), &map, nodes);
-    }
+    let number = get_steps(&path[..], &path[..], &map, "AAA", 0);
     println!("The result is: {number}");
 }
